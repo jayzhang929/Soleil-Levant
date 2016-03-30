@@ -16,10 +16,10 @@ import android.view.View;
 import android.widget.ImageView;
 
 import java.text.MessageFormat;
-import java.util.Random;
+import java.util.ArrayList;
 
 /**
- * Created by jon on 3/20/2016.
+ * Modified by Jay on 3/30/2016.
  */
 public class ImpressionistView extends View {
 
@@ -37,6 +37,11 @@ public class ImpressionistView extends View {
     private Paint _paintBorder = new Paint();
     private BrushType _brushType = BrushType.Square;
     private float _minBrushRadius = 5;
+
+    private ArrayList<Float> XPath;
+    private ArrayList<Float> YPath;
+    public Bitmap curBitmap;
+    private ArrayList<Integer> colors;
 
     public ImpressionistView(Context context) {
         super(context);
@@ -78,6 +83,9 @@ public class ImpressionistView extends View {
         _paintBorder.setAlpha(50);
 
         //_paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
+        XPath = new ArrayList<Float>();
+        YPath = new ArrayList<Float>();
+        colors = new ArrayList<Integer>();
     }
 
     @Override
@@ -111,7 +119,11 @@ public class ImpressionistView extends View {
      * Clears the painting
      */
     public void clearPainting(){
-        //TODO
+        // TODO
+        XPath.clear();
+        YPath.clear();
+        colors.clear();
+        invalidate();
     }
 
     @Override
@@ -123,7 +135,15 @@ public class ImpressionistView extends View {
         }
 
         // Draw the border. Helpful to see the size of the bitmap in the ImageView
-        canvas.drawRect(getBitmapPositionInsideImageView(_imageView), _paintBorder);
+        // canvas.drawRect(getBitmapPositionInsideImageView(_imageView), _paintBorder);
+        for (int i = 0; i < XPath.size(); i++) {
+            int left = Math.round(XPath.get(i)) - 20;
+            int top = Math.round(YPath.get(i)) - 20;
+            int right = left + 40;
+            int bottom = top + 40;
+            _paint.setColor(colors.get(i));
+            canvas.drawRect(left, top, right, bottom, _paint);
+        }
     }
 
     @Override
@@ -133,8 +153,18 @@ public class ImpressionistView extends View {
         //Basically, the way this works is to liste for Touch Down and Touch Move events and determine where those
         //touch locations correspond to the bitmap in the ImageView. You can then grab info about the bitmap--like the pixel color--
         //at that location
+        float touchX = motionEvent.getX();
+        float touchY = motionEvent.getY();
 
+        if (motionEvent.getAction() == motionEvent.ACTION_DOWN || motionEvent.getAction() == motionEvent.ACTION_MOVE) {
+            if (getBitmapPositionInsideImageView(_imageView).contains((int) touchX, (int) touchY)) {
+                XPath.add(touchX);
+                YPath.add(touchY);
+                colors.add(curBitmap.getPixel((int) touchX, (int) touchY));
+            }
+        }
 
+        invalidate();
         return true;
     }
 
