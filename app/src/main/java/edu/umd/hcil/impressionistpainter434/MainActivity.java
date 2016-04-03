@@ -27,6 +27,7 @@ import java.io.IOException;
 public class MainActivity extends AppCompatActivity implements OnMenuItemClickListener {
 
     private static int RESULT_LOAD_IMAGE = 1;
+    private static int REQUEST_IMAGE_CAPTURE = 2;
     private  ImpressionistView _impressionistView;
 
     // These images are downloaded and added to the Android Gallery when the 'Download Images' button is clicked.
@@ -176,6 +177,12 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         startActivityForResult(i, RESULT_LOAD_IMAGE);
     }
 
+    public void onButtonClickTakePicture(View view) {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null)
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+    }
+
     /**
      * Called automatically when an image has been selected in the Gallery
      *
@@ -203,6 +210,20 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+        }
+
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            ImageView imageView = (ImageView) findViewById(R.id.viewImage);
+            Bundle extra = data.getExtras();
+            Bitmap bitmap = Bitmap.createScaledBitmap((Bitmap) extra.get("data"), imageView.getWidth(), imageView.getHeight(), false);
+
+            // destroy the drawing cache to ensure that when a new image is loaded, its cached
+            imageView.destroyDrawingCache();
+            imageView.setImageBitmap(bitmap);
+            imageView.setDrawingCacheEnabled(true);
+            // set the bitmap of current imageView
+            _impressionistView.curBitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
 
         }
     }

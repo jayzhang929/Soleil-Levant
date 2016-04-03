@@ -9,6 +9,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -16,7 +17,6 @@ import android.view.View;
 import android.widget.ImageView;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 
 /**
  * Modified by Jay on 3/30/2016.
@@ -38,10 +38,8 @@ public class ImpressionistView extends View {
     private BrushType _brushType = BrushType.Square;
     private float _minBrushRadius = 5;
 
-    private ArrayList<Float> XPath;
-    private ArrayList<Float> YPath;
     public Bitmap curBitmap;
-    private ArrayList<Integer> colors;
+    private long startTime;
 
     public ImpressionistView(Context context) {
         super(context);
@@ -83,9 +81,6 @@ public class ImpressionistView extends View {
         _paintBorder.setAlpha(50);
 
         //_paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
-        XPath = new ArrayList<Float>();
-        YPath = new ArrayList<Float>();
-        colors = new ArrayList<Integer>();
     }
 
     @Override
@@ -120,10 +115,13 @@ public class ImpressionistView extends View {
      */
     public void clearPainting(){
         // TODO
-        XPath.clear();
-        YPath.clear();
-        colors.clear();
-        invalidate();
+        if (_offScreenCanvas != null) {
+            Paint paint = new Paint();
+            paint.setColor(Color.WHITE);
+            paint.setStyle(Paint.Style.FILL);
+            _offScreenCanvas.drawRect(0, 0, this.getWidth(), this.getHeight(), paint);
+            invalidate();
+        }
     }
 
     @Override
@@ -135,15 +133,7 @@ public class ImpressionistView extends View {
         }
 
         // Draw the border. Helpful to see the size of the bitmap in the ImageView
-        // canvas.drawRect(getBitmapPositionInsideImageView(_imageView), _paintBorder);
-        for (int i = 0; i < XPath.size(); i++) {
-            int left = Math.round(XPath.get(i)) - 20;
-            int top = Math.round(YPath.get(i)) - 20;
-            int right = left + 40;
-            int bottom = top + 40;
-            _paint.setColor(colors.get(i));
-            canvas.drawRect(left, top, right, bottom, _paint);
-        }
+        canvas.drawRect(getBitmapPositionInsideImageView(_imageView), _paintBorder);
     }
 
     @Override
@@ -157,20 +147,38 @@ public class ImpressionistView extends View {
         float touchY = motionEvent.getY();
 
         if (motionEvent.getAction() == motionEvent.ACTION_DOWN || motionEvent.getAction() == motionEvent.ACTION_MOVE) {
+            long factor = SystemClock.elapsedRealtime() - startTime;
+            Log.d("factor: ", String.valueOf((double)factor));
+            double denominator = (double) factor / 100 + 0.2;
+            Log.d("denominator is: ", String.valueOf(denominator));
+            float radiusMagnifier = 1 / (float) denominator;
+
+            float r = 2000 / factor;
             if (getBitmapPositionInsideImageView(_imageView).contains((int) touchX, (int) touchY)) {
-                XPath.add(touchX);
-                YPath.add(touchY);
-                colors.add(curBitmap.getPixel((int) touchX, (int) touchY));
+                /*
+                Log.d("view width and height: ", String.valueOf(touchX) + " " + String.valueOf(touchY));
+                Log.d("bitmap width: ", String.valueOf(curBitmap.getWidth()));
+                Log.d("bitmap height: ", String.valueOf(curBitmap.getHeight()));
+                */
+                _paint.setColor(curBitmap.getPixel((int) touchX, (int) touchY));
+                switch (_brushType) {
+                    case Square:
+                        _offScreenCanvas.drawRect(touchX - _defaultRadius, touchY - _defaultRadius, touchX + _defaultRadius, touchY + _defaultRadius, _paint);
+                        break;
+                    case Circle:
+                        _offScreenCanvas.drawCircle(touchX, touchY, r, _paint);
+                        break;
+                }
+
             }
+            // update startTime
+            startTime = SystemClock.elapsedRealtime();
         }
 
         invalidate();
         return true;
     }
-
-
-
-
+    
     /**
      * This method is useful to determine the bitmap position within the Image View. It's not needed for anything else
      * Modified from:
