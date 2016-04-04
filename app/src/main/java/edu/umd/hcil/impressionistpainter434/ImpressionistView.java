@@ -8,6 +8,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
 import android.util.AttributeSet;
@@ -148,19 +149,41 @@ public class ImpressionistView extends View {
 
         if (motionEvent.getAction() == motionEvent.ACTION_DOWN || motionEvent.getAction() == motionEvent.ACTION_MOVE) {
             long factor = SystemClock.elapsedRealtime() - startTime;
-            Log.d("factor: ", String.valueOf((double)factor));
+            // Log.d("factor: ", String.valueOf((double)factor));
             double denominator = (double) factor / 100 + 0.2;
-            Log.d("denominator is: ", String.valueOf(denominator));
+            // Log.d("denominator is: ", String.valueOf(denominator));
             float radiusMagnifier = 1 / (float) denominator;
 
             float r = 2000 / factor;
+
+
             if (getBitmapPositionInsideImageView(_imageView).contains((int) touchX, (int) touchY)) {
+                Rect curDrawable = getBitmapPositionInsideImageView(_imageView);
+
                 /*
-                Log.d("view width and height: ", String.valueOf(touchX) + " " + String.valueOf(touchY));
+                Log.d("drawable rect: ", String.valueOf(curDrawable.top) + " " + String.valueOf(curDrawable.bottom)
+                        + " " + String.valueOf(curDrawable.left) + " " + String.valueOf(curDrawable.right));
+                Log.d("touch w and height: ", String.valueOf(touchX) + " " + String.valueOf(touchY));
                 Log.d("bitmap width: ", String.valueOf(curBitmap.getWidth()));
                 Log.d("bitmap height: ", String.valueOf(curBitmap.getHeight()));
                 */
-                _paint.setColor(curBitmap.getPixel((int) touchX, (int) touchY));
+                
+                float ratioX = (curDrawable.right - curDrawable.left) / (float) curBitmap.getWidth();
+                float ratioY = (curDrawable.bottom - curDrawable.top) / (float) curBitmap.getHeight();
+
+                float adjustedX = touchX - curDrawable.left;
+                float adjustedY = touchY - curDrawable.top;
+
+                int matchX = (int) (adjustedX / ratioX);
+                int matchY = (int) (adjustedY / ratioY);
+
+                /*
+                Log.d("ratioX & Y", String.valueOf(ratioX) + " " + String.valueOf(ratioY));
+                Log.d("adjustedX & Y", String.valueOf(adjustedX) + " " + String.valueOf(adjustedY));
+                Log.d("matchX & Y", String.valueOf(matchX) + " " + String.valueOf(matchY));
+                */
+
+                _paint.setColor(curBitmap.getPixel(matchX, matchY));
                 switch (_brushType) {
                     case Square:
                         _offScreenCanvas.drawRect(touchX - _defaultRadius, touchY - _defaultRadius, touchX + _defaultRadius, touchY + _defaultRadius, _paint);
@@ -178,7 +201,7 @@ public class ImpressionistView extends View {
         invalidate();
         return true;
     }
-    
+
     /**
      * This method is useful to determine the bitmap position within the Image View. It's not needed for anything else
      * Modified from:

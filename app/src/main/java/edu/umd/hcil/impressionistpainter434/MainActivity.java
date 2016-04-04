@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             ImageView imageView = (ImageView) findViewById(R.id.viewImage);
             Bundle extra = data.getExtras();
-            Bitmap bitmap = Bitmap.createScaledBitmap((Bitmap) extra.get("data"), imageView.getWidth(), imageView.getHeight(), false);
+            Bitmap bitmap = (Bitmap) extra.get("data");
 
             // destroy the drawing cache to ensure that when a new image is loaded, its cached
             imageView.destroyDrawingCache();
