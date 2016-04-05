@@ -211,9 +211,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
                 e.printStackTrace();
             }
 
-        }
-
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+        }else if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             ImageView imageView = (ImageView) findViewById(R.id.viewImage);
             Bundle extra = data.getExtras();
             Bitmap bitmap = (Bitmap) extra.get("data");

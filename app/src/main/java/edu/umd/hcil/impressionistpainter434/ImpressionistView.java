@@ -18,6 +18,7 @@ import android.view.View;
 import android.widget.ImageView;
 
 import java.text.MessageFormat;
+import java.util.Random;
 
 /**
  * Modified by Jay on 3/30/2016.
@@ -40,7 +41,10 @@ public class ImpressionistView extends View {
     private float _minBrushRadius = 5;
 
     public Bitmap curBitmap;
+    private Rect curDrawable;
     private long startTime;
+    private int totalDegree = 360;
+    private int splatterRadius = 5;
 
     public ImpressionistView(Context context) {
         super(context);
@@ -156,40 +160,18 @@ public class ImpressionistView extends View {
 
             float r = 2000 / factor;
 
-
-            if (getBitmapPositionInsideImageView(_imageView).contains((int) touchX, (int) touchY)) {
-                Rect curDrawable = getBitmapPositionInsideImageView(_imageView);
-
-                /*
-                Log.d("drawable rect: ", String.valueOf(curDrawable.top) + " " + String.valueOf(curDrawable.bottom)
-                        + " " + String.valueOf(curDrawable.left) + " " + String.valueOf(curDrawable.right));
-                Log.d("touch w and height: ", String.valueOf(touchX) + " " + String.valueOf(touchY));
-                Log.d("bitmap width: ", String.valueOf(curBitmap.getWidth()));
-                Log.d("bitmap height: ", String.valueOf(curBitmap.getHeight()));
-                */
-                
-                float ratioX = (curDrawable.right - curDrawable.left) / (float) curBitmap.getWidth();
-                float ratioY = (curDrawable.bottom - curDrawable.top) / (float) curBitmap.getHeight();
-
-                float adjustedX = touchX - curDrawable.left;
-                float adjustedY = touchY - curDrawable.top;
-
-                int matchX = (int) (adjustedX / ratioX);
-                int matchY = (int) (adjustedY / ratioY);
-
-                /*
-                Log.d("ratioX & Y", String.valueOf(ratioX) + " " + String.valueOf(ratioY));
-                Log.d("adjustedX & Y", String.valueOf(adjustedX) + " " + String.valueOf(adjustedY));
-                Log.d("matchX & Y", String.valueOf(matchX) + " " + String.valueOf(matchY));
-                */
-
-                _paint.setColor(curBitmap.getPixel(matchX, matchY));
+            curDrawable = getBitmapPositionInsideImageView(_imageView);
+            if (curDrawable.contains((int) touchX, (int) touchY)) {
+                _paint.setColor(curBitmap.getPixel(matchX(curDrawable, touchX), matchY(curDrawable, touchY)));
                 switch (_brushType) {
                     case Square:
                         _offScreenCanvas.drawRect(touchX - _defaultRadius, touchY - _defaultRadius, touchX + _defaultRadius, touchY + _defaultRadius, _paint);
                         break;
                     case Circle:
                         _offScreenCanvas.drawCircle(touchX, touchY, r, _paint);
+                        break;
+                    case CircleSplatter:
+                        drawCircleSplatter(touchX, touchY, _defaultRadius, 5);
                         break;
                 }
 
@@ -200,6 +182,34 @@ public class ImpressionistView extends View {
 
         invalidate();
         return true;
+    }
+
+    private int matchX (Rect curDrawable, float touchX) {
+        float ratioX = (curDrawable.right - curDrawable.left) / (float) curBitmap.getWidth();
+        float adjustedX = touchX - curDrawable.left;
+        return (int) (adjustedX / ratioX);
+    }
+
+    private int matchY (Rect curDrawable, float touchY) {
+        float ratioY = (curDrawable.bottom - curDrawable.top) / (float) curBitmap.getHeight();
+        float adjustedY = touchY - curDrawable.top;
+        return (int) (adjustedY / ratioY);
+    }
+
+    private void drawCircleSplatter(float touchX, float touchY, int radius, int amount) {
+        Random random = new Random();
+
+        for (int i = 0; i < amount; i++) {
+            int value = random.nextInt(radius);
+            int degree = random.nextInt(totalDegree);
+            double radians = Math.toRadians(degree);
+
+            int x = (int) (touchX + Math.tan(radians) * value);
+            int y = (int) (touchY + Math.sin(radians) * value);
+
+            _paint.setColor(curBitmap.getPixel(matchX(curDrawable, touchX), matchY(curDrawable, touchY)));
+            _offScreenCanvas.drawCircle(x, y, splatterRadius, _paint);
+        }
     }
 
     /**
