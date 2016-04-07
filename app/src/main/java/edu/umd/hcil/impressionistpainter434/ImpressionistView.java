@@ -212,6 +212,10 @@ public class ImpressionistView extends View {
         }
     }
 
+    public Bitmap getOffScreenBitmap() {
+        return _offScreenBitmap;
+    }
+
     /**
      * This method is useful to determine the bitmap position within the Image View. It's not needed for anything else
      * Modified from:

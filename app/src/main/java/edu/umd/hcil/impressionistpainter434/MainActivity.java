@@ -3,8 +3,12 @@ package edu.umd.hcil.impressionistpainter434;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -28,6 +32,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
     private static int RESULT_LOAD_IMAGE = 1;
     private static int REQUEST_IMAGE_CAPTURE = 2;
+    private static int REQUEST_DOWNLOAD_IMAGE = 3;
     private  ImpressionistView _impressionistView;
 
     // These images are downloaded and added to the Android Gallery when the 'Download Images' button is clicked.
@@ -118,46 +123,22 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
      * @param v
      */
     public void onButtonClickDownloadImages(View v){
+        requestPermissions(new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_DOWNLOAD_IMAGE);
+    }
 
-        // Without this call, the app was crashing in the onActivityResult method when trying to read from file system
-        FileUtils.verifyStoragePermissions(this);
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 
-        // Amazing Stackoverflow post on downloading images: http://stackoverflow.com/questions/15549421/how-to-download-and-save-an-image-in-android
-        final BasicImageDownloader imageDownloader = new BasicImageDownloader(new BasicImageDownloader.OnImageLoaderListener() {
-
-            @Override
-            public void onError(String imageUrl, BasicImageDownloader.ImageError error) {
-                Log.v("BasicImageDownloader", "onError: " + error);
-            }
-
-            @Override
-            public void onProgressChange(String imageUrl, int percent) {
-                Log.v("BasicImageDownloader", "onProgressChange: " + percent);
-            }
-
-            @Override
-            public void onComplete(String imageUrl, Bitmap downloadedBitmap) {
-                File externalStorageDirFile = Environment.getExternalStorageDirectory();
-                String externalStorageDirStr = Environment.getExternalStorageDirectory().getAbsolutePath();
-                boolean checkStorage = FileUtils.checkPermissionToWriteToExternalStorage(MainActivity.this);
-                String guessedFilename = URLUtil.guessFileName(imageUrl, null, null);
-
-                // See: http://developer.android.com/training/basics/data-storage/files.html
-                // Get the directory for the user's public pictures directory.
-                File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), guessedFilename);
-                try {
-                    boolean compressSucceeded = downloadedBitmap.compress(Bitmap.CompressFormat.PNG, 100, new FileOutputStream(file));
-                    FileUtils.addImageToGallery(file.getAbsolutePath(), getApplicationContext());
-                    Toast.makeText(getApplicationContext(), "Saved to " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+        if (requestCode == REQUEST_DOWNLOAD_IMAGE) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Bitmap toBeSaved = _impressionistView.getOffScreenBitmap();
+                    MediaStore.Images.Media.insertImage(getContentResolver(), toBeSaved, "", "");
+                    Toast.makeText(this, "Drawing Saved!", Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(this, "permission denied", Toast.LENGTH_LONG).show();
                 }
             }
-        });
 
-        for(String url: IMAGE_URLS){
-            imageDownloader.download(url, true);
-        }
     }
 
     /**
@@ -225,4 +206,5 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
 
         }
     }
+
 }
