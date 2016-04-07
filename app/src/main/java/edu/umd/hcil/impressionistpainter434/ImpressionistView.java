@@ -8,7 +8,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
 import android.util.AttributeSet;
@@ -45,6 +44,7 @@ public class ImpressionistView extends View {
     private long startTime;
     private int totalDegree = 360;
     private int splatterRadius = 5;
+    private int dotsAmount = 5;
 
     public ImpressionistView(Context context) {
         super(context);
@@ -158,7 +158,7 @@ public class ImpressionistView extends View {
             // Log.d("denominator is: ", String.valueOf(denominator));
             float radiusMagnifier = 1 / (float) denominator;
 
-            float r = 2000 / factor;
+            float r = 2000 / factor + 1;
 
             curDrawable = getBitmapPositionInsideImageView(_imageView);
             if (curDrawable.contains((int) touchX, (int) touchY)) {
@@ -171,7 +171,7 @@ public class ImpressionistView extends View {
                         _offScreenCanvas.drawCircle(touchX, touchY, r, _paint);
                         break;
                     case CircleSplatter:
-                        drawCircleSplatter(touchX, touchY, _defaultRadius, 5);
+                        drawCircleSplatter(touchX, touchY, _defaultRadius, dotsAmount);
                         break;
                 }
 
@@ -204,7 +204,7 @@ public class ImpressionistView extends View {
             int degree = random.nextInt(totalDegree);
             double radians = Math.toRadians(degree);
 
-            int x = (int) (touchX + Math.tan(radians) * value);
+            int x = (int) (touchX + Math.cos(radians) * value);
             int y = (int) (touchY + Math.sin(radians) * value);
 
             _paint.setColor(curBitmap.getPixel(matchX(curDrawable, touchX), matchY(curDrawable, touchY)));
