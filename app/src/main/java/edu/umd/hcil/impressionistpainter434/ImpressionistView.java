@@ -41,10 +41,12 @@ public class ImpressionistView extends View {
 
     public Bitmap curBitmap;
     private Rect curDrawable;
-    private long startTime;
     private int totalDegree = 360;
     private int splatterRadius = 5;
     private int dotsAmount = 5;
+    private float lastX = -1;
+    private float lastY = -1;
+    private float startingSpeed = 0;
 
     public ImpressionistView(Context context) {
         super(context);
@@ -152,14 +154,6 @@ public class ImpressionistView extends View {
         float touchY = motionEvent.getY();
 
         if (motionEvent.getAction() == motionEvent.ACTION_DOWN || motionEvent.getAction() == motionEvent.ACTION_MOVE) {
-            long factor = SystemClock.elapsedRealtime() - startTime;
-            // Log.d("factor: ", String.valueOf((double)factor));
-            double denominator = (double) factor / 100 + 0.2;
-            // Log.d("denominator is: ", String.valueOf(denominator));
-            float radiusMagnifier = 1 / (float) denominator;
-
-            float r = 2000 / factor + 1;
-
             curDrawable = getBitmapPositionInsideImageView(_imageView);
             if (curDrawable.contains((int) touchX, (int) touchY)) {
                 _paint.setColor(curBitmap.getPixel(matchX(curDrawable, touchX), matchY(curDrawable, touchY)));
@@ -168,7 +162,13 @@ public class ImpressionistView extends View {
                         _offScreenCanvas.drawRect(touchX - _defaultRadius, touchY - _defaultRadius, touchX + _defaultRadius, touchY + _defaultRadius, _paint);
                         break;
                     case Circle:
-                        _offScreenCanvas.drawCircle(touchX, touchY, r, _paint);
+                        float speed = startingSpeed;
+                        if (lastX != -1 && lastY != -1 && _lastPointTime != -1) {
+                            float distance = (float) Math.sqrt(Math.pow(touchX - lastX, 2) + Math.pow(touchY - lastY, 2));
+                            long time = SystemClock.elapsedRealtime() - _lastPointTime;
+                            speed = distance / time;
+                        }
+                        _offScreenCanvas.drawCircle(touchX, touchY, _defaultRadius * speed, _paint);
                         break;
                     case CircleSplatter:
                         drawCircleSplatter(touchX, touchY, _defaultRadius, dotsAmount);
@@ -176,8 +176,9 @@ public class ImpressionistView extends View {
                 }
 
             }
-            // update startTime
-            startTime = SystemClock.elapsedRealtime();
+            lastX = touchX;
+            lastY = touchY;
+            _lastPointTime = SystemClock.elapsedRealtime();
         }
 
         invalidate();
